@@ -74,11 +74,8 @@ def predict_rub_salary_hh(vacancies):
             total_salary += average_salary
             vacancy_count += 1
 
-    if vacancy_count == 0:
-        average_salary = 0
-    else:
-        average_salary = int(total_salary / vacancy_count)
-    return vacancy_count, average_salary
+    average_salary = 0 if not vacancy_count else total_salary / vacancy_count
+    return vacancy_count, int(average_salary)
 
 
 def predict_rub_salary_sj(vacancies):
@@ -95,12 +92,8 @@ def predict_rub_salary_sj(vacancies):
             total_salary += average_salary
             vacancy_count += 1
 
-    if vacancy_count == 0:
-        average_salary = 0
-        return vacancy_count, int(average_salary)
-    else:
-        average_salary = total_salary / vacancy_count
-        return vacancy_count, int(average_salary)
+    average_salary = 0 if not vacancy_count else total_salary / vacancy_count
+    return vacancy_count, int(average_salary)
 
 
 def get_languages_statistic_hh(languages, month_ago):
@@ -121,14 +114,14 @@ def get_languages_statistic_hh(languages, month_ago):
             "vacancies_processed": vacancies_processed,
             "average_salary": average_salary
         }
-    sorted_vacancy = dict(
+    sorted_languages_statistic = dict(
         sorted(
             languages_statistic.items(),
             key=lambda item: item[1]["vacancies_found"],
             reverse=True
         )
     )
-    return sorted_vacancy
+    return sorted_languages_statistic
 
 
 def get_languages_statistic_sj(languages, api_key):
@@ -149,14 +142,14 @@ def get_languages_statistic_sj(languages, api_key):
             "vacancies_processed": vacancies_processed,
             "average_salary": average_salary
         }
-    sorted_vacancy = dict(
+    sorted_languages_statistic = dict(
         sorted(
             languages_statistic.items(),
             key=lambda item: item[1]["vacancies_found"],
             reverse=True
         )
     )
-    return sorted_vacancy
+    return sorted_languages_statistic
 
 
 def create_vacancies_table(sorted_vacancy, title):
@@ -182,15 +175,15 @@ def main():
     load_dotenv()
     api_key = os.getenv("SJ_KEY")
     languages = ['Python', 'Java', 'JavaScript', 'C#', 'C++', 'PHP', 'Ruby', 'Go', 'Swift', 'Kotlin', 'Node.js']
-    hh_done = False
     month_ago = get_date()
-    while not hh_done:
+    while True:
         try:
             print(create_vacancies_table(get_languages_statistic_hh(languages, month_ago), title="HeadHunter Moscow"))
-            hh_done = True
+            break
         except requests.exceptions.ConnectionError as e:
             print(f"Проблемы с соединением, перезапуск через минуту, подробнее: {e}")
             time.sleep(60)
+            continue
 
     print(create_vacancies_table(get_languages_statistic_sj(languages, api_key), title="SuperJob Moscow"))
 
