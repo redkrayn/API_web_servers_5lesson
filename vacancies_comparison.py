@@ -29,7 +29,7 @@ def get_vacancies_hh(language, page, month_ago):
     response = requests.get("https://api.hh.ru/vacancies", params=payload)
     response.raise_for_status()
     vacancies_hh = response.json()
-    return vacancies_hh["found"], vacancies_hh["items"]
+    return vacancies_hh["found"], vacancies_hh["items"], vacancies_hh["pages"]
 
 
 def get_vacancies_sj(language, api_key, page):
@@ -44,7 +44,7 @@ def get_vacancies_sj(language, api_key, page):
     response = requests.get("https://api.superjob.ru/2.0/vacancies", headers=headers, params=payload)
     response.raise_for_status()
     vacancies_sj = response.json()
-    return vacancies_sj["total"], vacancies_sj["objects"]
+    return vacancies_sj["total"], vacancies_sj["objects"], vacancies_sj["more"]
 
 
 def calculate_average_salary(salary_from, salary_to):
@@ -63,14 +63,14 @@ def predict_rub_salary_hh(vacancies):
     vacancy_count = 0
 
     for vacancy in vacancies:
-        if vacancy["salary"] is None:
+        if not vacancy["salary"]:
             continue
         if vacancy["salary"].get("currency") != "RUR":
             continue
         salary_from = vacancy["salary"].get("from")
         salary_to = vacancy["salary"].get("to")
         average_salary = calculate_average_salary(salary_from, salary_to)
-        if average_salary is not None:
+        if average_salary:
             total_salary += average_salary
             vacancy_count += 1
 
@@ -91,7 +91,7 @@ def predict_rub_salary_sj(vacancies):
         salary_from = vacancy["payment_from"]
         salary_to = vacancy["payment_to"]
         average_salary = calculate_average_salary(salary_from, salary_to)
-        if average_salary is not None:
+        if average_salary:
             total_salary += average_salary
             vacancy_count += 1
 
@@ -108,15 +108,13 @@ def get_languages_statistic_hh(languages, month_ago):
 
     for language in languages:
         page = 0
-        vacancies_found = float('inf')
         collected_vacancies = []
-        while page * PER_PAGE < vacancies_found and page * PER_PAGE < API_LIMIT:
-            vacancies_hh = get_vacancies_hh(language, page, month_ago)
-            vacancies_found, vacancies = vacancies_hh
+        while True:
+            vacancies_found, vacancies, pages = get_vacancies_hh(language, page, month_ago)
             collected_vacancies.extend(vacancies)
-            if page * PER_PAGE >= vacancies_found or page * PER_PAGE >= API_LIMIT:
-                break
             page += 1
+            if page >= pages:
+                break
         vacancies_processed, average_salary = predict_rub_salary_hh(collected_vacancies)
         languages_statistic[language] = {
             "vacancies_found": vacancies_found,
@@ -138,15 +136,13 @@ def get_languages_statistic_sj(languages, api_key):
 
     for language in languages:
         page = 0
-        vacancies_found = float('inf')
         collected_vacancies = []
-        while page * PER_PAGE < vacancies_found and page * PER_PAGE < API_LIMIT:
-            vacancies_sj = get_vacancies_sj(language, api_key, page)
-            vacancies_found, vacancies = vacancies_sj
+        while True:
+            vacancies_found, vacancies, vacancies_more = get_vacancies_sj(language, api_key, page)
             collected_vacancies.extend(vacancies)
-            if page * PER_PAGE >= vacancies_found or page * PER_PAGE >= API_LIMIT:
-                break
             page += 1
+            if page >= vacancies_more:
+                break
         vacancies_processed, average_salary = predict_rub_salary_sj(collected_vacancies)
         languages_statistic[language] = {
             "vacancies_found": vacancies_found,
