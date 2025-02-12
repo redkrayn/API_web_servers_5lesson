@@ -106,6 +106,7 @@ def get_languages_statistic_hh(languages, month_ago):
             vacancies_found, vacancies, pages = get_vacancies_hh(language, page, month_ago)
             collected_vacancies.extend(vacancies)
             page += 1
+            time.sleep(1)
             if page >= pages:
                 break
         vacancies_processed, average_salary = predict_rub_salary_hh(collected_vacancies)
@@ -176,15 +177,7 @@ def main():
     api_key = os.getenv("SJ_KEY")
     languages = ['Python', 'Java', 'JavaScript', 'C#', 'C++', 'PHP', 'Ruby', 'Go', 'Swift', 'Kotlin', 'Node.js']
     month_ago = get_date()
-    while True:
-        try:
-            print(create_vacancies_table(get_languages_statistic_hh(languages, month_ago), title="HeadHunter Moscow"))
-            break
-        except requests.exceptions.ConnectionError as e:
-            print(f"Проблемы с соединением, перезапуск через минуту, подробнее: {e}")
-            time.sleep(60)
-            continue
-
+    print(create_vacancies_table(get_languages_statistic_hh(languages, month_ago), title="HeadHunter Moscow"))
     print(create_vacancies_table(get_languages_statistic_sj(languages, api_key), title="SuperJob Moscow"))
 
 
