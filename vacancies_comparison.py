@@ -102,13 +102,20 @@ def get_languages_statistic_hh(languages, month_ago):
     for language in languages:
         page = 0
         collected_vacancies = []
+        vacancies_found = 0
         while True:
-            vacancies_found, vacancies, pages = get_vacancies_hh(language, page, month_ago)
-            collected_vacancies.extend(vacancies)
-            page += 1
-            time.sleep(1)
-            if page >= pages:
-                break
+            try:
+                vacancies_found, vacancies, pages = get_vacancies_hh(language, page, month_ago)
+            except requests.exceptions.ConnectionError as e:
+                print(f"Проблема с соединением, подробности: {e}")
+                time.sleep(10)
+                continue
+            if vacancies_found and pages:
+                collected_vacancies.extend(vacancies)
+                page += 1
+                time.sleep(1)
+                if page >= pages:
+                    break
         vacancies_processed, average_salary = predict_rub_salary_hh(collected_vacancies)
         languages_statistic[language] = {
             "vacancies_found": vacancies_found,
