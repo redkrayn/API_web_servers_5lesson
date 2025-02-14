@@ -110,12 +110,11 @@ def get_languages_statistic_hh(languages, month_ago):
                 print(f"Проблема с соединением, подробности: {e}")
                 time.sleep(10)
                 continue
-            if vacancies_found and pages:
-                collected_vacancies.extend(vacancies)
-                page += 1
-                time.sleep(1)
-                if page >= pages:
-                    break
+            collected_vacancies.extend(vacancies)
+            page += 1
+            time.sleep(1)
+            if page >= pages:
+                break
         vacancies_processed, average_salary = predict_rub_salary_hh(collected_vacancies)
         languages_statistic[language] = {
             "vacancies_found": vacancies_found,
@@ -142,7 +141,7 @@ def get_languages_statistic_sj(languages, api_key):
             vacancies_found, vacancies, vacancies_more = get_vacancies_sj(language, api_key, page)
             collected_vacancies.extend(vacancies)
             page += 1
-            if page >= vacancies_more:
+            if not vacancies_more:
                 break
         vacancies_processed, average_salary = predict_rub_salary_sj(collected_vacancies)
         languages_statistic[language] = {
